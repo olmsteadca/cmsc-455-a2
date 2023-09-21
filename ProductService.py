@@ -1,6 +1,7 @@
 import os
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
@@ -12,7 +13,7 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, default=0)
-    quantity = db.Column(db.Integer, default=1)
+    quantity = db.Column(db.Integer, default=50)
 
 # Endpoint 1: Get list of available grocery products
 @app.route('/products', methods=['GET'])
@@ -22,12 +23,13 @@ def get_products():
 
     if products:
         for product in products:
-            product_list.append({"id": product.id, 
+            product_list.append({
+                "id": product.id, 
                 "name": product.name, 
                 "price": product.price, 
-                "quantity" : product.quantity})
+                "quantity": product.quantity
+            })
         return jsonify(product_list)
-    
     else: 
         return jsonify({"error": "No products found"}), 404
 
@@ -37,12 +39,12 @@ def get_product(product_id):
     product = Product.query.get(product_id)
 
     if product:
-        return jsonify({"product": 
-            {"id": product.id, 
+        return jsonify({"product": {
+            "id": product.id, 
             "name": product.name, 
             "price": product.price, 
-            "quantity" : product.quantity}})
-    
+            "quantity": product.quantity
+        }})
     else:
         return jsonify({"error": "Product not found"}), 404
 
@@ -70,7 +72,8 @@ def add_product():
             "id": existing_product.id, 
             "name": existing_product.name,
             "price": existing_product.price, 
-            "quantity" : existing_product.quantity}})
+            "quantity": existing_product.quantity
+        }})
     
     else:
         new_product = Product(name=data['name'])
@@ -80,8 +83,10 @@ def add_product():
             "id": new_product.id, 
             "name": new_product.name,
             "price": new_product.price, 
-            "quantity" : new_product.quantity}})
+            "quantity": new_product.quantity
+        }})
 
+# Endpoint 4: Remove a product by ID
 @app.route('/products/<int:product_id>', methods=['POST'])
 def remove_product(product_id):
     product = Product.query.get(product_id)
@@ -89,15 +94,16 @@ def remove_product(product_id):
     if product:
         db.session.delete(product)
         db.session.commit()
-        return jsonify({"message" : "Product removed", "product" : {
-            "id" : product.id, 
-            "name" : product.name, 
-            "price" : product.price, 
-            "quantity" : product.quantity}})
-    
+        return jsonify({"message": "Product removed", "product": {
+            "id": product.id, 
+            "name": product.name, 
+            "price": product.price, 
+            "quantity": product.quantity
+        }})
     else:
         return jsonify({"error": "Product not found"}), 404
-    
+
+# Endpoint 5: Remove all products
 @app.route('/products/edit', methods=['POST'])
 def remove_products():
     products = Product.query.all()
@@ -106,8 +112,7 @@ def remove_products():
         for product in products:
             db.session.delete(product)
         db.session.commit()
-        return jsonify({"message" : "all products removed"})
-    
+        return jsonify({"message": "All products removed"})
     else:
         return jsonify({"error": "Product not found"}), 404
 
