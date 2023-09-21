@@ -25,7 +25,7 @@ class Cart(db.Model):
 # User Model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.column(db.String(100), unique=True, nullable=False)
+    username = db.Column(db.String(100), unique=True, nullable=False)
     cart = db.relationship('Cart', backref='user', lazy=True)
 
 # Endpoint 1: Get list of grocery products in a user's cart
