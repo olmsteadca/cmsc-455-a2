@@ -1,4 +1,7 @@
 import requests
+from flask import Flask
+
+app = Flask(__name__)
 
 # ProductService methods
 def get_products():
