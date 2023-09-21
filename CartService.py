@@ -11,8 +11,8 @@ db = SQLAlchemy(app)
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    price = db.Column(db.Double, default=0)
-    quantity = db.Column(db.Integer, default=0)
+    price = db.Column(db.Float, default=0)
+    quantity = db.Column(db.Integer, default=1)
 
 # Cart Model
 class Cart(db.Model):
@@ -68,5 +68,6 @@ def remove_product(quantity_removed):
         return jsonify({"error": "Product not found"}), 404
 
 if __name__ == '__main__':
-    #db.create_all()
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

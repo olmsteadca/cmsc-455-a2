@@ -11,22 +11,38 @@ db = SQLAlchemy(app)
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    price = db.Column(db.Double, default=0)
-    quantity = db.Column(db.Integer, default=0)
+    price = db.Column(db.Float, default=0)
+    quantity = db.Column(db.Integer, default=1)
 
 # Endpoint 1: Get list of available grocery products
 @app.route('/products', methods=['GET'])
 def get_products():
     products = Product.query.all()
-    product_list = [{"id": product.id, "name": product.name, "price": product.price, "quantity" : product.quantity} for product in products]
-    return jsonify({"products": product_list})
+    product_list = []
+
+    if products:
+        for product in products:
+            product_list.append({"id": product.id, 
+                "name": product.name, 
+                "price": product.price, 
+                "quantity" : product.quantity})
+        return jsonify(product_list)
+    
+    else: 
+        return jsonify({"error": "No products found"}), 404
 
 # Endpoint 2: Get a specific product description by ID
 @app.route('/products/<int:product_id>', methods=['GET'])
-def get_product(task_id):
-    product = Product.query.get(task_id)
+def get_product(product_id):
+    product = Product.query.get(product_id)
+
     if product:
-        return jsonify({"product": {"id": product.id, "name": product.name, "price": product.price, "quantity" : product.quantity}})
+        return jsonify({"product": 
+            {"id": product.id, 
+            "name": product.name, 
+            "price": product.price, 
+            "quantity" : product.quantity}})
+    
     else:
         return jsonify({"error": "Product not found"}), 404
 
@@ -34,16 +50,68 @@ def get_product(task_id):
 @app.route('/products', methods=['POST'])
 def add_product():
     data = request.json
+    products = Product.query.all()
+    exists = False
+    id = 0
 
     if "name" not in data:
         return jsonify({"error": "Name is required"}), 400
 
-    new_product = Product(name=data['title'], done=False)
-    db.session.add(new_product)
-    db.session.commit()
+    for product in products:
+        if product.name == data['name']:
+            exists = True
+            id = product.id
+    
+    if exists:
+        existing_product = Product.query.get(id)
+        existing_product.quantity += 1
+        db.session.commit()
+        return jsonify({"message": "Quantity updated", "product": {
+            "id": existing_product.id, 
+            "name": existing_product.name,
+            "price": existing_product.price, 
+            "quantity" : existing_product.quantity}})
+    
+    else:
+        new_product = Product(name=data['name'])
+        db.session.add(new_product)
+        db.session.commit()
+        return jsonify({"message": "Product added", "product": {
+            "id": new_product.id, 
+            "name": new_product.name,
+            "price": new_product.price, 
+            "quantity" : new_product.quantity}})
 
-    return jsonify({"message": "Product added", "product": {"id": new_product.id, "name": new_product.name, "price": new_product.price, "quantity" : new_product.quantity}}), 201
+@app.route('/products/<int:product_id>', methods=['POST'])
+def remove_product(product_id):
+    product = Product.query.get(product_id)
+
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({"message" : "Product removed", "product" : {
+            "id" : product.id, 
+            "name" : product.name, 
+            "price" : product.price, 
+            "quantity" : product.quantity}})
+    
+    else:
+        return jsonify({"error": "Product not found"}), 404
+    
+@app.route('/products/edit', methods=['POST'])
+def remove_products():
+    products = Product.query.all()
+
+    if products:
+        for product in products:
+            db.session.delete(product)
+        db.session.commit()
+        return jsonify({"message" : "all products removed"})
+    
+    else:
+        return jsonify({"error": "Product not found"}), 404
 
 if __name__ == '__main__':
-    #db.create_all()
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
